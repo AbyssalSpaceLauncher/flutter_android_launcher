@@ -1,7 +1,7 @@
 name: flutter_android_launcher
 description: "A Flutter plugin to create custom launchers for Android."
 version: 0.0.1
-homepage:
+repository: "https://github.com/AbyssalSpaceLauncher/flutter_android_launcher"
 
 environment:
   sdk: ^3.6.0
