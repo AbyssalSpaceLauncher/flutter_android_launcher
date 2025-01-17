@@ -1,6 +1,6 @@
 # flutter_android_launcher
 
-`flutter_android_launcher` is a Flutter plugin that helps users create custom launchers for Android using Flutter. This plugin provides various functionalities to interact with installed apps, manage user profiles, and handle quiet mode settings. (ie.  Android 15 private space.)
+`flutter_android_launcher` is a Flutter plugin that helps users create custom launchers for Android using Flutter. This plugin provides various functionalities to interact with installed apps, manage user profiles, and handle quiet mode settings. (ie.  Android 15 private space.) This plugin is developed for a currently in-progress launcher.
 
 ## Features
 
@@ -19,7 +19,48 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_android_launcher:
-    path: ../
+```
+
+### Android Setup
+
+1. Add the following permissions and configs to your `AndroidManifest.xml` file:
+
+```xml
+<!-- android/app/src/main/AndroidManifest.xml -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ...Add this... -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES" />
+    <application>
+        <activity>
+            <intent-filter>
+                <!-- add this -->
+                <category android:name="android.intent.category.HOME"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <!-- add this -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>
+```
+
+2. Create an `xml` folder in `android/app/src/main/res` and add a `file_paths.xml` file with the following content:
+
+```xml
+<!-- android/app/src/main/res/xml/file_paths.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="cache" path="." />
+</paths>
 ```
 
 ## Example
@@ -31,6 +72,300 @@ To run the example:
 1. Navigate to the `example` directory.
 2. Run `flutter pub get` to install dependencies.
 3. Run `flutter run` to start the example app.
+
+### Basic Usage
+
+Here is a brief example of how to use the API to display a list of apps and a button to launch them:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_android_launcher/flutter_android_launcher.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Android Launcher',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  List<Map<String, String>> _installedApps = [];
+  final _flutterAndroidLauncherPlugin = FlutterAndroidLauncher();
+
+  @override
+  void initState() {
+    super.initState();
+    _getInstalledApps();
+  }
+
+  Future<void> _getInstalledApps() async {
+    try {
+      final installedApps = await _flutterAndroidLauncherPlugin.getInstalledApps();
+      setState(() {
+        _installedApps = installedApps;
+      });
+    } on PlatformException catch (e) {
+      print("Failed to get installed apps: '${e.message}'.");
+    }
+  }
+
+  Future<void> _launchApp(String packageName) async {
+    try {
+      await _flutterAndroidLauncherPlugin.launchApp(packageName, 'default');
+    } on PlatformException catch (e) {
+      print("Failed to launch app: '${e.message}'.");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Installed Apps'),
+      ),
+      body: _installedApps.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: _installedApps.length,
+              itemBuilder: (context, index) {
+                final app = _installedApps[index];
+                return ListTile(
+                  title: Text(app['appName']!),
+                  subtitle: Text(app['packageName']!),
+                  trailing: ElevatedButton(
+                    onPressed: () => _launchApp(app['packageName']!),
+                    child: const Text('Launch'),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+```
+
+### Detailed Example
+
+Here is a more detailed example that includes retrieving user profiles and handling quiet mode settings. It is recommened to run the example app as well, which is simmialr to the below code, to see how it works.
+
+```dart
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:uri_content/uri_content.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter_android_launcher/flutter_android_launcher.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+
+  final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  List<Map<String, String>> _installedApps = [];
+  List<Map<String, String>> _userProfiles = [];
+  final Map<String, Uint8List> _iconCache = {};
+  String _quietModeStatus = 'Enabled';
+  String? _privateProfile;
+  final _flutterAndroidLauncherPlugin = FlutterAndroidLauncher();
+
+  Future<void> _getInstalledApps() async {
+    List<Map<String, String>> installedApps;
+    try {
+      installedApps = await _flutterAndroidLauncherPlugin.getInstalledApps();
+    } on PlatformException catch (e) {
+      installedApps = [{
+        'appName': 'Error',
+        'packageName': "Failed to get installed apps: '${e.message}'.",
+        'profile': 'N/A',
+        'iconUri': ''
+      }];
+    }
+
+    setState(() {
+      _installedApps = installedApps;
+    });
+  }
+
+  Future<void> _launchApp(String packageName, String profile) async {
+    try {
+      await _flutterAndroidLauncherPlugin.launchApp(packageName, profile);
+    } on PlatformException catch (e) {
+      print("Failed to launch app: '${e.message}'.");
+    }
+  }
+
+  Future<void> _getLauncherUserInfo() async {
+    try {
+      final userProfiles = await _flutterAndroidLauncherPlugin.getLauncherUserInfo();
+      setState(() {
+        _userProfiles = userProfiles;
+        for (var profile in userProfiles) {
+          print('UserProfile: ${profile['userProfile']}, UserType: ${profile['userType']}');
+        }
+
+        _privateProfile = userProfiles.firstWhereOrNull(
+          (profile) => profile['userType'] == 'android.os.usertype.profile.PRIVATE'
+        )?['userProfile'];
+        print('Private profile: $_privateProfile');
+      });
+    } on PlatformException catch (e) {
+      setState(() {
+        _userProfiles = [{
+          'userProfile': 'Error',
+          'userType': "Failed to get user info: '${e.message}'"
+        }];
+      });
+    }
+  }
+
+  Future<void> _checkQuietMode(String profile) async {
+    try {
+      final result = await _flutterAndroidLauncherPlugin.isQuietModeEnabled(profile);
+      setState(() {
+        _quietModeStatus = result ? 'Enabled' : 'Disabled';
+      });
+    } on PlatformException catch (e) {
+      setState(() {
+        _quietModeStatus = "Failed to check quiet mode: '${e.message}'";
+      });
+    }
+  }
+
+  Future<void> _toggleQuietMode(String profile) async {
+    try {
+      final enableQuietMode = _quietModeStatus == 'Disabled';
+      await _flutterAndroidLauncherPlugin.requestQuietModeEnabled(enableQuietMode, profile);
+    } on PlatformException catch (e) {
+      setState(() {
+        _quietModeStatus = "Failed to toggle quiet mode: '${e.message}'";
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    _getInstalledApps();
+    _getLauncherUserInfo().then((_) {
+      if (_privateProfile != null) {
+        _checkQuietMode(_privateProfile!);
+      }
+    });
+    _flutterAndroidLauncherPlugin.setMethodCallHandler((FlutterAndroidLauncherMethodCall call) async {
+      if (call.method == "updateQuietModeStatus") {
+        final isQuietModeEnabled = call.arguments as bool;
+        setState(() {
+          _quietModeStatus = isQuietModeEnabled ? 'Enabled' : 'Disabled';
+        });
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            children: [
+              if (_privateProfile != null) Text('Quiet Mode: $_quietModeStatus'),
+              _userProfiles.isEmpty
+                  ? const CircularProgressIndicator()
+                  : Column(
+                      children: _userProfiles.map((profile) {
+                        return Text('Profile: ${profile['userProfile']}, Type: ${profile['userType']}');
+                      }).toList(),
+                    ),
+              Expanded(
+                child: _installedApps.isEmpty
+                    ? const SizedBox()
+                    : ListView.builder(
+                        itemCount: _installedApps.length,
+                        itemBuilder: (context, index) {
+                          final app = _installedApps[index];
+                          final iconUri = app['iconUri']!;
+                          return ListTile(
+                            leading: _iconCache.containsKey(iconUri)
+                                ? Image.memory(_iconCache[iconUri]!)
+                                : FutureBuilder<Uint8List>(
+                                    future: UriContent().from(Uri.parse(iconUri)),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                                        _iconCache[iconUri] = snapshot.data!;
+                                        return Image.memory(snapshot.data!);
+                                      } else {
+                                        return const CircularProgressIndicator();
+                                      }
+                                    },
+                                  ),
+                            title: Text(app['appName']!),
+                            subtitle: Text('Package: ${app['packageName']!}\nProfile: ${app['profile']!}'),
+                            trailing: ElevatedButton(
+                              onPressed: () => _launchApp(app['packageName']!, app['profile']!),
+                              child: const Text('Launch'),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              if (_privateProfile != null)
+                ElevatedButton(
+                  onPressed: () => _toggleQuietMode(_privateProfile!),
+                  child: Text(_quietModeStatus == 'Enabled' ? 'Disable Quiet Mode' : 'Enable Quiet Mode'),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
 
 ## License
 
