@@ -167,16 +167,21 @@ class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAw
   private fun getIconUri(appInfo: ApplicationInfo): Uri {
     val pm = context.packageManager
     val icon = pm.getApplicationIcon(appInfo)
-    val bitmap = when (icon) {
-      is BitmapDrawable -> icon.bitmap
-      is AdaptiveIconDrawable -> {
-        val bitmap = Bitmap.createBitmap(icon.intrinsicWidth, icon.intrinsicHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        icon.setBounds(0, 0, canvas.width, canvas.height)
-        icon.draw(canvas)
-        bitmap
+    val bitmap = try {
+      when (icon) {
+        is BitmapDrawable -> icon.bitmap
+        is AdaptiveIconDrawable -> {
+          val bitmap = Bitmap.createBitmap(icon.intrinsicWidth, icon.intrinsicHeight, Bitmap.Config.ARGB_8888)
+          val canvas = Canvas(bitmap)
+          icon.setBounds(0, 0, canvas.width, canvas.height)
+          icon.draw(canvas)
+          bitmap
+        }
+        else -> throw IllegalArgumentException("Unsupported drawable type")
       }
-      else -> throw IllegalArgumentException("Unsupported drawable type")
+    } catch (e: IllegalArgumentException) {
+      // Return a placeholder image in case of unsupported drawable type
+      Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
     }
     val file = File(context.cacheDir, "${appInfo.packageName}.png")
     val outputStream = file.outputStream()
