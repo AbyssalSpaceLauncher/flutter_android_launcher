@@ -1,6 +1,6 @@
 # flutter_android_launcher
 
-`flutter_android_launcher` is a Flutter plugin that helps users create custom launchers for Android using Flutter. This plugin provides various functionalities to interact with installed apps, manage user profiles, and handle quiet mode settings. (ie.  Android 15 private space.) This plugin is developed for a currently in-progress launcher.
+`flutter_android_launcher` is a Flutter plugin that helps developers create custom launchers for Android using Flutter. This plugin provides various functionalities to interact with installed apps, manage user profiles, and handle quiet mode settings. (ie.  Android 15 private space.) This plugin is developed for a currently in-progress launcher.
 
 ## Features
 
@@ -9,6 +9,8 @@
 - Get user profile information.
 - Check if quiet mode is enabled for a profile.
 - Request to enable or disable quiet mode for a profile.
+
+Most of the relevant Android APIs are in [LauncherApps](https://developer.android.com/reference/android/content/pm/LauncherApps) such as [getApplicationInfo](https://developer.android.com/reference/android/content/pm/LauncherApps#getApplicationInfo(java.lang.String,%20int,%20android.os.UserHandle)), [getActivityList](https://developer.android.com/reference/android/content/pm/LauncherApps#getActivityList(java.lang.String,%20android.os.UserHandle)) and [startMainActivity](https://developer.android.com/reference/android/content/pm/LauncherApps#startMainActivity(android.content.ComponentName,%20android.os.UserHandle,%20android.graphics.Rect,%20android.os.Bundle)) as well as [UserManager](https://developer.android.com/reference/android/os/UserManager) via [getUserProfiles](https://developer.android.com/reference/android/os/UserManager#getUserProfiles()) and [requestQuietModeEnabled](https://developer.android.com/reference/android/os/UserManager#requestQuietModeEnabled(boolean,%20android.os.UserHandle,%20int)). These APIs are wrapped by this plugin. All the relevant APIs, and how they are used, can be seen in [FlutterAndroidLauncherPlugin.kt](https://github.com/AbyssalSpaceLauncher/flutter_android_launcher/blob/main/android/src/main/kotlin/com/example/flutter_android_launcher/FlutterAndroidLauncherPlugin.kt)
 
 ## Getting Started
 
@@ -166,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 ### Detailed Example
 
-Here is a more detailed example that includes retrieving user profiles and handling quiet mode settings. It is recommened to run the example app as well, which is simmialr to the below code, to see how it works.
+Here is a more detailed example that includes retrieving user profiles and handling quiet mode settings. It is recommended to run the example app as well, which is similar to the below code, to see how it works.
 
 ```dart
 import 'package:flutter/material.dart';
