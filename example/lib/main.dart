@@ -181,6 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 'Package: ${app['packageName']!}\nProfile: ${app['profile']!}',
                                 style: TextStyle(color: Colors.white),
                                 ),
+                              onTap: () => _launchApp(app['packageName']!, app['profile']!),
                               trailing: ElevatedButton(
                                 onPressed: () => _launchApp(app['packageName']!, app['profile']!),
                                 child: const Text('Launch'),
