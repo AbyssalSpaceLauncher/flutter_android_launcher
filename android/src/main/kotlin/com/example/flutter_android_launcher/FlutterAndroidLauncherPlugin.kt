@@ -13,7 +13,6 @@ import io.flutter.plugin.common.MethodChannel.Result
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.UserHandle
@@ -32,6 +31,8 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.content.BroadcastReceiver
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 
 /** FlutterAndroidLauncherPlugin */
 class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -60,14 +61,6 @@ class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAw
           result.success(installedApps)
         } else {
           result.error("UNAVAILABLE", "Installed apps not available.", null)
-        }
-      }
-      "getBatteryLevel" -> {
-        val batteryLevel = getBatteryLevel()
-        if (batteryLevel != -1) {
-          result.success(batteryLevel)
-        } else {
-          result.error("UNAVAILABLE", "Battery level not available.", null)
         }
       }
       "launchApp" -> {
@@ -151,20 +144,20 @@ class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAw
       val pm = context.packageManager
       val appName = pm.getApplicationLabel(appInfo).toString()
       val packageName = appInfo.packageName
-      val iconUri = getIconUri(appInfo)
+      val iconBase64 = getIconBase64(appInfo)
 
       val jsonObject = JSONObject()
       jsonObject.put("appName", appName)
       jsonObject.put("packageName", packageName)
       jsonObject.put("profile", profile.toString())
-      jsonObject.put("iconUri", iconUri.toString())
+      jsonObject.put("iconBase64", iconBase64)
       jsonArray.put(jsonObject)
     }
 
     return jsonArray.toString()
   }
 
-  private fun getIconUri(appInfo: ApplicationInfo): Uri {
+  private fun getIconBase64(appInfo: ApplicationInfo): String {
     val pm = context.packageManager
     val icon = pm.getApplicationIcon(appInfo)
     val bitmap = try {
@@ -183,11 +176,9 @@ class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAw
       // Return a placeholder image in case of unsupported drawable type
       Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
     }
-    val file = File(context.cacheDir, "${appInfo.packageName}.png")
-    val outputStream = file.outputStream()
+    val outputStream = ByteArrayOutputStream()
     bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-    outputStream.close()
-    return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
   }
 
   private fun getInstalledAppsList(): List<Pair<UserHandle, ApplicationInfo>> {
@@ -202,19 +193,6 @@ class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAw
     }
 
     return result
-  }
-
-  private fun getBatteryLevel(): Int {
-    val batteryLevel: Int
-    if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
-      val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-      batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-    } else {
-      val intent = ContextWrapper(context).registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-      batteryLevel = intent!!.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100 / intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-    }
-
-    return batteryLevel
   }
 
   private fun launchApp(packageName: String, profile: String) {

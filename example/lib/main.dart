@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:uri_content/uri_content.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_android_launcher/flutter_android_launcher.dart';
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -51,12 +51,18 @@ class _MyHomePageState extends State<MyHomePage> {
         'appName': 'Error',
         'packageName': "Failed to get installed apps: '${e.message}'.",
         'profile': 'N/A',
-        'iconUri': ''
+        'iconBase64': ''
       }];
     }
 
     setState(() {
       _installedApps = installedApps;
+      for (var app in installedApps) {
+        final iconBase64 = app['iconBase64']!;
+        if (!_iconCache.containsKey(iconBase64)) {
+          _iconCache[iconBase64] = base64Decode(iconBase64);
+        }
+      }
     });
   }
 
@@ -157,21 +163,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemCount: _installedApps.length,
                         itemBuilder: (context, index) {
                           final app = _installedApps[index];
-                          final iconUri = app['iconUri']!;
+                          final iconBase64 = app['iconBase64']!;
                           return ListTile(
-                            leading: _iconCache.containsKey(iconUri)
-                                ? Image.memory(_iconCache[iconUri]!)
-                                : FutureBuilder<Uint8List>(
-                                    future: UriContent().from(Uri.parse(iconUri)),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                        _iconCache[iconUri] = snapshot.data!;
-                                        return Image.memory(snapshot.data!);
-                                      } else {
-                                        return const CircularProgressIndicator();
-                                      }
-                                    },
-                                  ),
+                            leading: _iconCache.containsKey(iconBase64)
+                                ? Image.memory(_iconCache[iconBase64]!)
+                                : Image.memory(base64Decode(iconBase64)),
                             title: Text(app['appName']!),
                             subtitle: Text('Package: ${app['packageName']!}\nProfile: ${app['profile']!}'),
                             trailing: ElevatedButton(

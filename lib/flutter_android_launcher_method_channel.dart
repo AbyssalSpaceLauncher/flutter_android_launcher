@@ -24,7 +24,7 @@ class MethodChannelFlutterAndroidLauncher extends FlutterAndroidLauncherPlatform
       'appName': e['appName'].toString(),
       'packageName': e['packageName'].toString(),
       'profile': e['profile'].toString(),
-      'iconUri': e['iconUri'].toString()
+      'iconBase64': e['iconBase64'].toString()
     }).toList();
   }
 
