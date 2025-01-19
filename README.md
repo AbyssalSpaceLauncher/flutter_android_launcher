@@ -25,7 +25,7 @@ dependencies:
 
 ### Android Setup
 
-1. Add the following permissions and configs to your `AndroidManifest.xml` file:
+Add the following permissions and configs to your `AndroidManifest.xml` file:
 
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml -->
@@ -41,28 +41,8 @@ dependencies:
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        <!-- add this -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
     </application>
 </manifest>
-```
-
-2. Create an `xml` folder in `android/app/src/main/res` and add a `file_paths.xml` file with the following content:
-
-```xml
-<!-- android/app/src/main/res/xml/file_paths.xml -->
-<?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <cache-path name="cache" path="." />
-</paths>
 ```
 
 ## Example
