@@ -168,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 ### Detailed Example
 
-Here is a more detailed example that includes retrieving user profiles and handling quiet mode settings. It is recommened to run the example app as well, which is simmialr to the below code, to see how it works.
+Here is a more detailed example that includes retrieving user profiles and handling quiet mode settings. It is recommended to run the example app as well, which is similar to the below code, to see how it works.
 
 ```dart
 import 'package:flutter/material.dart';
