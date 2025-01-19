@@ -146,6 +146,79 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 ```
 
+### Wallpaper
+
+To make the system wallpaper viewable from your app, follow these steps:
+
+1.  Add the following style to `android/app/src/main/res/values/styles.xml` and  =`android/app/src/main/res/values-night/styles.xml`:
+
+```xml
+<style name="Theme.Transparent" parent="android:Theme">
+  <item name="android:windowBackground">@android:color/white</item>
+  <item name="android:windowContentOverlay">@null</item>
+  <item name="android:windowNoTitle">true</item>
+  <item name="android:backgroundDimEnabled">false</item>
+  <item name="android:windowShowWallpaper">true</item>
+</style>
+```
+
+This style is used to display the system wallpaper as the activity background for both light and dark mode.
+
+3. Update the theme of `MainActivity` in `android/app/src/main/AndroidManifest.xml` to use the `Theme.Transparent`:
+
+```xml
+<activity
+    android:name=".MainActivity"
+    android:theme="@style/Theme.Transparent">
+    <!-- ...existing code... -->
+</activity>
+```
+
+4. Remove the following meta-data from the same file:
+
+```xml
+<!-- Remove the following meta-data -->
+<meta-data
+    android:name="io.flutter.embedding.android.NormalTheme"
+    android:resource="@style/NormalTheme"/>
+```
+
+5. Update `MainActivity.kt` as follows to set the background mode to transparent:
+
+```kotlin
+package com.example.flutter_android_launcher_example //keep your current package name
+
+import io.flutter.embedding.android.FlutterActivity
+import android.os.Bundle
+import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode.transparent
+
+class MainActivity: FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        intent.putExtra("background_mode", transparent.toString())
+        super.onCreate(savedInstanceState)
+    }
+}
+```
+
+6. Set your Scaffold to transparent
+
+```dart
+Scaffold(
+    backgroundColor: Colors.transparent,
+    // ...existing code...
+)
+```
+
+To remove the status and navigation bars, do the folowing:
+
+```dart
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  runApp(const MyApp());
+}
+```
+
 ### Detailed Example
 
 Here is a more detailed example that includes retrieving user profiles and handling quiet mode settings. It is recommended to run the example app as well, which is similar to the below code, to see how it works.

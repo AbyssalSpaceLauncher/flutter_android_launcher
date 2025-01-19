@@ -6,6 +6,8 @@ import 'package:flutter_android_launcher/flutter_android_launcher.dart';
 import 'dart:convert';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   runApp(const MyApp());
 }
 
@@ -144,46 +146,56 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Center(
-          child: Column(
-            children: [
-              if (_privateProfile != null) Text('Quiet Mode: $_quietModeStatus'),
-              _userProfiles.isEmpty
-                  ? const CircularProgressIndicator()
-                  : Column(
-                      children: _userProfiles.map((profile) {
-                        return Text('Profile: ${profile['userProfile']}, Type: ${profile['userType']}');
-                      }).toList(),
-                    ),
-              Expanded(
-                child: _installedApps.isEmpty
-                    ? const SizedBox()
-                    : ListView.builder(
-                        itemCount: _installedApps.length,
-                        itemBuilder: (context, index) {
-                          final app = _installedApps[index];
-                          final iconBase64 = app['iconBase64']!;
-                          return ListTile(
-                            leading: _iconCache.containsKey(iconBase64)
-                                ? Image.memory(_iconCache[iconBase64]!)
-                                : Image.memory(base64Decode(iconBase64)),
-                            title: Text(app['appName']!),
-                            subtitle: Text('Package: ${app['packageName']!}\nProfile: ${app['profile']!}'),
-                            trailing: ElevatedButton(
-                              onPressed: () => _launchApp(app['packageName']!, app['profile']!),
-                              child: const Text('Launch'),
-                            ),
-                          );
-                        },
+          child: DefaultTextStyle(
+            style: TextStyle(color: Colors.white),
+            child: Column(
+              children: [
+                if (_privateProfile != null) Text('Quiet Mode: $_quietModeStatus'),
+                _userProfiles.isEmpty
+                    ? const CircularProgressIndicator()
+                    : Column(
+                        children: _userProfiles.map((profile) {
+                          return Text('Profile: ${profile['userProfile']}, Type: ${profile['userType']}');
+                        }).toList(),
                       ),
-              ),
-              if (_privateProfile != null)
-                ElevatedButton(
-                  onPressed: () => _toggleQuietMode(_privateProfile!),
-                  child: Text(_quietModeStatus == 'Enabled' ? 'Disable Quiet Mode' : 'Enable Quiet Mode'),
+                Expanded(
+                  child: _installedApps.isEmpty
+                      ? const SizedBox()
+                      : ListView.builder(
+                          itemCount: _installedApps.length,
+                          itemBuilder: (context, index) {
+                            final app = _installedApps[index];
+                            final iconBase64 = app['iconBase64']!;
+                            return ListTile(
+                              leading: _iconCache.containsKey(iconBase64)
+                                  ? Image.memory(_iconCache[iconBase64]!)
+                                  : Image.memory(base64Decode(iconBase64)),
+                                title: Text(
+                                app['appName']!,
+                                style: TextStyle(color: Colors.white),
+                                ),
+                                subtitle: Text(
+                                'Package: ${app['packageName']!}\nProfile: ${app['profile']!}',
+                                style: TextStyle(color: Colors.white),
+                                ),
+                              trailing: ElevatedButton(
+                                onPressed: () => _launchApp(app['packageName']!, app['profile']!),
+                                child: const Text('Launch'),
+                              ),
+                            );
+                          },
+                        ),
                 ),
-            ],
+                if (_privateProfile != null)
+                  ElevatedButton(
+                    onPressed: () => _toggleQuietMode(_privateProfile!),
+                    child: Text(_quietModeStatus == 'Enabled' ? 'Disable Quiet Mode' : 'Enable Quiet Mode'),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
