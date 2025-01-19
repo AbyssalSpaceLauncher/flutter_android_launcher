@@ -28,6 +28,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.VectorDrawable
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.content.BroadcastReceiver
@@ -163,7 +164,7 @@ class FlutterAndroidLauncherPlugin: FlutterPlugin, MethodCallHandler, ActivityAw
     val bitmap = try {
       when (icon) {
         is BitmapDrawable -> icon.bitmap
-        is AdaptiveIconDrawable -> {
+        is AdaptiveIconDrawable, is VectorDrawable -> {
           val bitmap = Bitmap.createBitmap(icon.intrinsicWidth, icon.intrinsicHeight, Bitmap.Config.ARGB_8888)
           val canvas = Canvas(bitmap)
           icon.setBounds(0, 0, canvas.width, canvas.height)
